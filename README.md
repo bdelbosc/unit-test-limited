@@ -8,7 +8,6 @@ The limitation to reproduce:
 - CPU
 - Disk IO
 
-
 Using a docker makes things straithforward to handle CPU and memory
 limitation, using volume for existing source and m2 repository.
 
@@ -43,26 +42,26 @@ docker build -t unit-test-limited .
 
 ## Run
 
-To an env with 1 CPU and 2g of ram on a slow disk:
+To run an env with half of a CPU and 2g of ram on a slow disk:
 
 ```
 docker run -it -v /home/$USER/dev/nuxeo.git:/volume/git \
                -v /home/$USER/.m2:/root/.m2 \
 			   -v /media/$USER/MY-SLOW-USB-1-KEY:/volume/slow \
 			   --memory=2g --memory-swap=2g \
-			   --cpus=1 \
+			   --cpus="0.5" \
 			   unit-test-limited
 root@87be2a3c64f8:/volume/git#
 ```
 
-To run maven with java tmp on slow disk:
+To run maven with Java temporary file on a slow disk:
 
 ```
 cd nuxeo-runtime/nuxeo-stream/
 root@87be2a3c64f8:/volume/git/nuxeo-runtime/nuxeo-stream# mvn -Djava.io.tmpdir=/volume/slow/tmp clean install
 ```
 
-To have the test case also running on slow disk you need to edit the
+To have the test case target also running on a slow disk you need to edit the
 `pom.xml` and add a profile:
 
 ```
@@ -82,8 +81,8 @@ root@87be2a3c64f8:/volume/git/nuxeo-runtime/nuxeo-stream# mvn -Djava.io.tmpdir=/
 ```
 
 Note when you want to go back to your normal env you may need to fix
-some permissions, because has created some new stuff in target or m2
-repository as root
+some permissions because docker has created some new stuff in `target`
+or `~/.m2` repository as root user:
 
 ```
 chown $USER.USER -R /home/$USER/dev/nuxeo.git /home/$USER/.m2
@@ -91,7 +90,8 @@ chown $USER.USER -R /home/$USER/dev/nuxeo.git /home/$USER/.m2
 
 ## NBD (Network Block Device) for slow disk simulation
 
-Here an example on how to setup a very slow hard drive using [xnbd](https://bitbucket.org/hirofuchi/xnbd/wiki/Home)
+Here an example on how to setup a very slow hard drive using
+[xnbd](https://bitbucket.org/hirofuchi/xnbd/wiki/Home)
 
 
 ```
@@ -119,10 +119,16 @@ mount -o sync /dev/nbd0 /mnt/slow/
 After this you can use `/mnt/slow` as volume for `/volume/slow`.
 
 Note that it is also possible to use `trickle` to limit the upload and
-download bandwith of xnbd-server to limit read and write rate, but it
-is a bit unstable your mileage may vary.
+download bandwith of `xnbd-server` to limit read and write rate:
 
-It might worth to create a docker for this ...
+```
+# limit rate to 2MB:
+trickle -d2000 -u2000 xnbd-server --target --lport 9999 /tmp/slow.img
+```
+
+But it is a bit unstable, your mileage may vary.
+
+Also it might worth to create a docker for this ...
 
 
 # About Nuxeo
