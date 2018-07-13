@@ -130,6 +130,13 @@ But it is a bit unstable, your mileage may vary.
 
 Also it might worth to create a docker for this ...
 
+## Other slow disk solutions
+
+Try to use a docker compose that setup an NFS server and add an extra delay using tc, like:
+
+```
+tc qdisc add dev eth0 root netem delay 4ms 1ms
+```
 
 # About Nuxeo
 
